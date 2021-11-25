@@ -4,12 +4,14 @@ namespace RSA
 {
     public class RSAWrapper
     {
-        private readonly int _blockSize;
+        private readonly int _encryptionBlockSize;
+        private readonly int _decryptionBlockSize;
         private readonly bool _doOAEPPadding;
 
-        public RSAWrapper(int blockSize, bool doOAEPPadding)
+        public RSAWrapper(int encryptionBlockSize, bool doOAEPPadding)
         {
-            _blockSize = blockSize;
+            _encryptionBlockSize = encryptionBlockSize;
+            _decryptionBlockSize = _encryptionBlockSize * 2;
             _doOAEPPadding = doOAEPPadding;
         }
 
@@ -22,10 +24,10 @@ namespace RSA
                 for (
                     int currentPosition = 0;
                     currentPosition < unencrypted.Length;
-                    currentPosition += _blockSize)
+                    currentPosition += _encryptionBlockSize)
                 {
-                    var inputBlock = new byte[_blockSize];
-                    unencrypted.Read(inputBlock, currentPosition, _blockSize);
+                    var inputBlock = new byte[_encryptionBlockSize];
+                    unencrypted.Read(inputBlock, currentPosition, _encryptionBlockSize);
 
                     await encrypted.WriteAsync(rsaCryptoServiceProvider.Encrypt(
                         inputBlock,
@@ -43,10 +45,10 @@ namespace RSA
                 for (
                     int currentPosition = 0;
                     currentPosition < encrypted.Length;
-                    currentPosition += _blockSize)
+                    currentPosition += _decryptionBlockSize)
                 {
-                    var inputBlock = new byte[_blockSize];
-                    encrypted.Read(inputBlock, currentPosition, _blockSize);
+                    var inputBlock = new byte[_decryptionBlockSize];
+                    encrypted.Read(inputBlock, currentPosition, _decryptionBlockSize);
 
                     await unencrypted.WriteAsync(rsaCryptoServiceProvider.Decrypt(
                         inputBlock,
