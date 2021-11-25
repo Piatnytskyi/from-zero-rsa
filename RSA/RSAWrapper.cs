@@ -27,7 +27,7 @@ namespace RSA
                     currentPosition += _encryptionBlockSize)
                 {
                     var inputBlock = new byte[_encryptionBlockSize];
-                    unencrypted.Read(inputBlock, currentPosition, _encryptionBlockSize);
+                    unencrypted.Read(inputBlock, 0, _encryptionBlockSize);
 
                     await encrypted.WriteAsync(rsaCryptoServiceProvider.Encrypt(
                         inputBlock,
@@ -48,7 +48,7 @@ namespace RSA
                     currentPosition += _decryptionBlockSize)
                 {
                     var inputBlock = new byte[_decryptionBlockSize];
-                    encrypted.Read(inputBlock, currentPosition, _decryptionBlockSize);
+                    encrypted.Read(inputBlock, 0, _decryptionBlockSize);
 
                     await unencrypted.WriteAsync(rsaCryptoServiceProvider.Decrypt(
                         inputBlock,
