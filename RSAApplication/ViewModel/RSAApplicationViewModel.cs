@@ -128,6 +128,8 @@ namespace RSAApplication.ViewModel
         public RSAApplicationViewModel()
         {
             //TODO: Create decorators for state change.
+            //TODO: Make encrypt/decrypt and RSA keys related commands accept filenames.
+            //TODO: Make proper exception handling.
             ChooseFileCommand = new RelayCommand(o => ChooseFile(), c => CanChooseFile());
             ImportRSAKeysCommand = new RelayCommand(o => ImportRSAKeys(), c => CanImportRSAKeys());
             ExportRSAKeysCommand = new RelayCommand(o => ExportRSAKeys(), c => CanExportRSAKeys());
@@ -223,34 +225,40 @@ namespace RSAApplication.ViewModel
             saveFileDialog.Title = "Save File...";
             saveFileDialog.FileName = Path.GetFileName(FilenameInput + ".enc");
 
-            if (saveFileDialog.ShowDialog() == true)
+            if (saveFileDialog.ShowDialog() == false)
+                return;
+
+            IsInProgress = true;
+            Status = "Encrypting...:";
+
+            var rsaWrapper = new RSAWrapper(_rsaEncryptionBlockSize, false);
+            var temporaryFileName = FilenameInput == saveFileDialog.FileName
+                ? saveFileDialog.FileName + ".enc"
+                : saveFileDialog.FileName;
+
+            try
             {
-                IsInProgress = true;
-                Status = "Encrypting...:";
-
-                var rsaWrapper = new RSAWrapper(_rsaEncryptionBlockSize, false);
-
-                try
-                {
-                    using (var fileToEncrypt = File.OpenRead(FilenameInput))
-                    using (var decryptedFile = File.OpenWrite(
-                        FilenameInput == saveFileDialog.FileName
-                            ? saveFileDialog.FileName + ".enc"
-                            : saveFileDialog.FileName))
+                using (var fileToEncrypt = File.OpenRead(FilenameInput))
+                using (var decryptedFile = File.OpenWrite(temporaryFileName))
                     await rsaWrapper.Encrypt(
                         fileToEncrypt,
                         decryptedFile,
-                        _rsaCryptoServiceProvider.ExportParameters(_rsaCurrentService == RSAService.Authentication));
+                        _rsaCryptoServiceProvider.ExportParameters(
+                            _rsaCurrentService == RSAService.Authentication));
 
-                    Status = "File was encrypted!";
-                    IsInProgress = false;
-                }
-                catch (Exception ex)
-                {
-                    Status = "Encryption failed!";
-                    IsInProgress = false;
-                    MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                Status = "File was encrypted!";
+                IsInProgress = false;
+            }
+            catch (Exception ex)
+            {
+                Status = "Encryption failed!";
+                IsInProgress = false;
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                if (temporaryFileName != saveFileDialog.FileName)
+                    File.Move(temporaryFileName, saveFileDialog.FileName, true);
             }
         }
 
@@ -267,36 +275,42 @@ namespace RSAApplication.ViewModel
             saveFileDialog.Title = "Save File...";
             saveFileDialog.FileName = Path.GetFileName(FilenameInput);
 
-            if (saveFileDialog.ShowDialog() == true)
+            if (saveFileDialog.ShowDialog() == false)
+                return;
+
+            IsInProgress = true;
+            Status = "Decrypting...:";
+
+            var rsaWrapper = new RSAWrapper(_rsaEncryptionBlockSize, false);
+            var selectedFileInfo = new FileInfo(saveFileDialog.FileName);
+            var temporaryFileName = FilenameInput == saveFileDialog.FileName
+                ? selectedFileInfo.DirectoryName + "\\"
+                    + selectedFileInfo.Name + ".dec" + selectedFileInfo.Extension
+                : saveFileDialog.FileName;
+
+            try
             {
-                IsInProgress = true;
-                Status = "Decrypting...:";
-
-                var rsaWrapper = new RSAWrapper(_rsaEncryptionBlockSize, false);
-                var selectedFileInfo = new FileInfo(saveFileDialog.FileName);
-
-                try
-                {
-                    using (var fileToDecrypt = File.OpenRead(FilenameInput))
-                    using (var decryptedFile = File.OpenWrite(
-                        FilenameInput == saveFileDialog.FileName
-                            ? selectedFileInfo.DirectoryName + "\\"
-                                + selectedFileInfo.Name + ".dec" + selectedFileInfo.Extension
-                            : saveFileDialog.FileName))
+                using (var fileToDecrypt = File.OpenRead(FilenameInput))
+                using (var decryptedFile = File.OpenWrite(temporaryFileName))
                     await rsaWrapper.Decipher(
                         fileToDecrypt,
                         decryptedFile,
-                        _rsaCryptoServiceProvider.ExportParameters(_rsaCurrentService == RSAService.Confidentiality));
+                        _rsaCryptoServiceProvider.ExportParameters(
+                            _rsaCurrentService == RSAService.Confidentiality));
 
-                    Status = "File was decrypted!";
-                    IsInProgress = false;
-                }
-                catch (Exception ex)
-                {
-                    Status = "Decryption failed!";
-                    IsInProgress = false;
-                    MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                Status = "File was decrypted!";
+                IsInProgress = false;
+            }
+            catch (Exception ex)
+            {
+                Status = "Decryption failed!";
+                IsInProgress = false;
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                if (temporaryFileName != saveFileDialog.FileName)
+                    File.Move(temporaryFileName, saveFileDialog.FileName, true);
             }
         }
 
@@ -315,30 +329,31 @@ namespace RSAApplication.ViewModel
                 saveFileDialog.Title = "Save File...";
                 saveFileDialog.FileName = Path.GetFileName(FilenameInput);
 
-                if (saveFileDialog.ShowDialog() == true)
-                {
-                    IsInProgress = true;
-                    Status = "Decrypting...:";
+                if (saveFileDialog.ShowDialog() == false)
+                    return;
 
-                    var hashedKey = Encoding.UTF8
-                        .GetBytes(RC5PasswordInput)
-                        .GetMD5HashedKeyForRC5(KeyBytesLength.Bytes8);
+                IsInProgress = true;
+                Status = "Decrypting...:";
 
-                    var decodedFileContent = _rc5.DecipherCBCPAD(
-                        File.ReadAllBytes(FilenameInput),
-                        hashedKey);
+                var hashedKey = Encoding.UTF8
+                    .GetBytes(RC5PasswordInput)
+                    .GetMD5HashedKeyForRC5(KeyBytesLength.Bytes8);
 
-                    var selectedFileInfo = new FileInfo(saveFileDialog.FileName);
-                    File.WriteAllBytes(
-                        FilenameInput == saveFileDialog.FileName
-                            ? selectedFileInfo.DirectoryName + "\\"
-                                + selectedFileInfo.Name + ".dec" + selectedFileInfo.Extension
-                            : saveFileDialog.FileName,
-                        decodedFileContent);
+                var decodedFileContent = _rc5.DecipherCBCPAD(
+                    File.ReadAllBytes(FilenameInput),
+                    hashedKey);
 
-                    Status = "File was decrypted!";
-                    IsInProgress = false;
-                }
+                var selectedFileInfo = new FileInfo(saveFileDialog.FileName);
+                var temporaryFileName = FilenameInput == saveFileDialog.FileName
+                    ? selectedFileInfo.DirectoryName + "\\"
+                        + selectedFileInfo.Name + ".dec" + selectedFileInfo.Extension
+                    : saveFileDialog.FileName;
+                File.WriteAllBytes(temporaryFileName, decodedFileContent);
+                if (temporaryFileName != saveFileDialog.FileName)
+                    File.Move(temporaryFileName, saveFileDialog.FileName, true);
+
+                Status = "File was decrypted!";
+                IsInProgress = false;
             });
         }
 
@@ -358,28 +373,29 @@ namespace RSAApplication.ViewModel
                 saveFileDialog.Title = "Save File...";
                 saveFileDialog.FileName = Path.GetFileName(FilenameInput + ".enc");
 
-                if (saveFileDialog.ShowDialog() == true)
-                {
-                    IsInProgress = true;
-                    Status = "Encrypting...:";
+                if (saveFileDialog.ShowDialog() == false)
+                    return;
 
-                    var hashedKey = Encoding.UTF8
-                        .GetBytes(RC5PasswordInput)
-                        .GetMD5HashedKeyForRC5(KeyBytesLength.Bytes8);
+                IsInProgress = true;
+                Status = "Encrypting...:";
 
-                    var encodedFileContent = _rc5.EncipherCBCPAD(
-                        File.ReadAllBytes(FilenameInput),
-                        hashedKey);
+                var hashedKey = Encoding.UTF8
+                    .GetBytes(RC5PasswordInput)
+                    .GetMD5HashedKeyForRC5(KeyBytesLength.Bytes8);
 
-                    File.WriteAllBytes(
-                        FilenameInput == saveFileDialog.FileName
-                            ? saveFileDialog.FileName + ".enc"
-                            : saveFileDialog.FileName,
-                        encodedFileContent);
+                var encodedFileContent = _rc5.EncipherCBCPAD(
+                    File.ReadAllBytes(FilenameInput),
+                    hashedKey);
 
-                    Status = "File was encrypted!";
-                    IsInProgress = false;
-                }
+                var temporaryFileName = FilenameInput == saveFileDialog.FileName
+                    ? saveFileDialog.FileName + ".enc"
+                    : saveFileDialog.FileName;
+                File.WriteAllBytes(temporaryFileName, encodedFileContent);
+                if (temporaryFileName != saveFileDialog.FileName)
+                    File.Move(temporaryFileName, saveFileDialog.FileName, true);
+
+                Status = "File was encrypted!";
+                IsInProgress = false;
             });
         }
     }
