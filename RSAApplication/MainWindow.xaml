@@ -4,9 +4,68 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RSAApplication"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        xmlns:Converters="clr-namespace:RSAApplication.Converters"
+        Title="RC5" Height="301" Width="800"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <Converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" TrueValue="Visible" FalseValue="Hidden"/>
+    </Window.Resources>
     <Grid>
-
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40*"/>
+            <RowDefinition Height="176"/>
+            <RowDefinition Height="69*"/>
+        </Grid.RowDefinitions>
+        <ToolBarTray Grid.Row="0" DockPanel.Dock="Top" Margin="0,0,0,1">
+            <ToolBar>
+                <Button Command="{Binding ChooseFileToEncryptCommand}">
+                    <TextBlock Margin="3,0,0,0">Choose file...</TextBlock>
+                </Button>
+                <Button Command="{Binding SaveEncryptedFileCommand}">
+                    <TextBlock Margin="3,0,0,0">Save file...</TextBlock>
+                </Button>
+            </ToolBar>
+        </ToolBarTray>
+        <Grid Grid.Row="1" >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="25"/>
+                <RowDefinition Height="25"/>
+                <RowDefinition Height="25"/>
+                <RowDefinition Height="25"/>
+                <RowDefinition Height="10"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="100" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="100" />
+            </Grid.ColumnDefinitions>
+            <Label Content="Enter password for operation:" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
+            <TextBox Text="{Binding PasswordInput, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" Grid.Column="1" Grid.Row="2" TextWrapping="Wrap" VerticalAlignment="Top"/>
+            <Button Command="{Binding EncryptFileCommand}" Content="Encrypt" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="3" VerticalAlignment="Top"/>
+            <Button Command="{Binding DencryptFileCommand}" Content="Decrypt" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="4" VerticalAlignment="Top"/>
+        </Grid>
+        <StatusBar Grid.Row="2">
+            <StatusBar.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="100" />
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </StatusBar.ItemsPanel>
+            <StatusBarItem Grid.Column="1">
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" Foreground="Gray" />
+                    <TextBlock Text="{Binding Output}" TextTrimming="CharacterEllipsis" Foreground="Gray" />
+                </StackPanel>
+            </StatusBarItem>
+            <StatusBarItem Grid.Column="2">
+                <ProgressBar Visibility="{Binding IsInProgress, Converter={StaticResource BoolToVisibilityConverter}}" IsIndeterminate="True" Width="90" Height="40" />
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>
