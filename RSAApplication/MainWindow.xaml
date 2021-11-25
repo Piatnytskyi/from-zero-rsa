@@ -5,46 +5,73 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RSAApplication"
         xmlns:Converters="clr-namespace:RSAApplication.Converters"
-        Title="RC5" Height="301" Width="800"
+        Title="Encryption Methods" Height="315" Width="800"
         ResizeMode="NoResize">
     <Window.Resources>
         <Converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" TrueValue="Visible" FalseValue="Hidden"/>
+        <Converters:EnumToBoolConverter x:Key="EnumToBoolConverter"/>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="40*"/>
-            <RowDefinition Height="176"/>
+            <RowDefinition Height="20*"/>
+            <RowDefinition Height="200"/>
             <RowDefinition Height="69*"/>
         </Grid.RowDefinitions>
-        <ToolBarTray Grid.Row="0" DockPanel.Dock="Top" Margin="0,0,0,1">
-            <ToolBar>
-                <Button Command="{Binding ChooseFileToEncryptCommand}">
-                    <TextBlock Margin="3,0,0,0">Choose file...</TextBlock>
-                </Button>
-                <Button Command="{Binding SaveEncryptedFileCommand}">
-                    <TextBlock Margin="3,0,0,0">Save file...</TextBlock>
-                </Button>
-            </ToolBar>
-        </ToolBarTray>
-        <Grid Grid.Row="1" >
-            <Grid.RowDefinitions>
-                <RowDefinition Height="10"/>
-                <RowDefinition Height="25"/>
-                <RowDefinition Height="25"/>
-                <RowDefinition Height="25"/>
-                <RowDefinition Height="25"/>
-                <RowDefinition Height="10"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="100" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="100" />
-            </Grid.ColumnDefinitions>
-            <Label Content="Enter password for operation:" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
-            <TextBox Text="{Binding PasswordInput, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" Grid.Column="1" Grid.Row="2" TextWrapping="Wrap" VerticalAlignment="Top"/>
-            <Button Command="{Binding EncryptFileCommand}" Content="Encrypt" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="3" VerticalAlignment="Top"/>
-            <Button Command="{Binding DencryptFileCommand}" Content="Decrypt" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="4" VerticalAlignment="Top"/>
-        </Grid>
+        <Menu Grid.Row="0" DockPanel.Dock="Top" Margin="0,0,0,1">
+            <MenuItem Header="File">
+                <MenuItem Header="Choose file..." Command="{Binding ChooseFileCommand}"/>
+                <Separator />
+                <MenuItem Header="Import RSA keys..." Command="{Binding ImportRSAKeysCommand}"/>
+                <MenuItem Header="Export RSA keys..." Command="{Binding ExportRSAKeysCommand}"/>
+            </MenuItem>
+        </Menu>
+        <TabControl Grid.Row="1">
+            <TabItem Header="RSA">
+                <Grid Grid.Row="1" >
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="40"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="10"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="100" />
+                    </Grid.ColumnDefinitions>
+                    <Label Content="Choose service:" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
+                    <StackPanel Grid.Column="1" Grid.Row="2">
+                        <RadioButton Content="Authentication" GroupName="RSAService" IsChecked="{Binding RSACurrentService, Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static local:RSAService.Authentication}}"/>
+                        <RadioButton Content="Confidentiality" GroupName="RSAService" IsChecked="{Binding RSACurrentService, Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static local:RSAService.Confidentiality}}"/>
+                    </StackPanel>
+                    <Button Command="{Binding RSAEncryptFileCommand}" Content="Encrypt" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="3" VerticalAlignment="Top"/>
+                    <Button Command="{Binding RSADencryptFileCommand}" Content="Decrypt" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="4" VerticalAlignment="Top"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="RC5">
+                <Grid Grid.Row="1" >
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="10"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="100" />
+                    </Grid.ColumnDefinitions>
+                    <Label Content="Enter RC5 password for operation:" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
+                    <TextBox Text="{Binding RC5PasswordInput, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" Grid.Column="1" Grid.Row="2" TextWrapping="Wrap" VerticalAlignment="Top"/>
+                    <Button Command="{Binding RC5EncryptFileCommand}" Content="Encrypt" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="3" VerticalAlignment="Top"/>
+                    <Button Command="{Binding RC5DencryptFileCommand}" Content="Decrypt" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="4" VerticalAlignment="Top"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
         <StatusBar Grid.Row="2">
             <StatusBar.ItemsPanel>
                 <ItemsPanelTemplate>

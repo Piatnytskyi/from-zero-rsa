@@ -2,6 +2,7 @@
 using RC5.Enums;
 using RC5.Extensions;
 using RSAApplication.Commands;
+using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,19 +13,35 @@ namespace RSAApplication.ViewModel
     {
         private readonly RC5.RC5 _rc5;
 
-        private string _passwordInput = string.Empty;
+        private string _rc5PasswordInput = string.Empty;
 
-        public string PasswordInput
+        public string RC5PasswordInput
         {
-            get => _passwordInput;
+            get => _rc5PasswordInput;
             set
             {
-                if (_passwordInput.Equals(value))
+                if (_rc5PasswordInput.Equals(value))
                 {
                     return;
                 }
-                _passwordInput = value;
-                RaisePropertyChanged(nameof(PasswordInput));
+                _rc5PasswordInput = value;
+                RaisePropertyChanged(nameof(RC5PasswordInput));
+            }
+        }
+
+        private RSAService _rsaCurrentService;
+
+        public RSAService RSACurrentService
+        {
+            get => _rsaCurrentService;
+            set
+            {
+                if (_rsaCurrentService.Equals(value))
+                {
+                    return;
+                }
+                _rsaCurrentService = value;
+                RaisePropertyChanged(nameof(RSACurrentService));
             }
         }
 
@@ -92,107 +109,33 @@ namespace RSAApplication.ViewModel
             }
         }
 
-        public RelayCommand ChooseFileToEncryptCommand { get; set; }
-        public RelayCommand SaveEncryptedFileCommand { get; set; }
-        public AsyncCommand EncryptFileCommand { get; set; }
-        public AsyncCommand DencryptFileCommand { get; set; }
+        public RelayCommand ChooseFileCommand { get; set; }
+        public RelayCommand ImportRSAKeysCommand { get; set; }
+        public RelayCommand ExportRSAKeysCommand { get; set; }
+        public AsyncCommand RSAEncryptFileCommand { get; set; }
+        public AsyncCommand RSADencryptFileCommand { get; set; }
+        public AsyncCommand RC5EncryptFileCommand { get; set; }
+        public AsyncCommand RC5DencryptFileCommand { get; set; }
 
         public RSAApplicationViewModel()
         {
-            ChooseFileToEncryptCommand = new RelayCommand(o => ChooseFileToEncrypt(), c => CanChooseFileToEncrypt());
-            SaveEncryptedFileCommand = new RelayCommand(o => SaveEncryptedFile(), c => CanSaveEncryptedFile());
-            EncryptFileCommand = new AsyncCommand(o => EncryptFile(), c => CanEncryptFile());
-            DencryptFileCommand = new AsyncCommand(o => DecryptFile(), c => CanDecryptFile());
+            ChooseFileCommand = new RelayCommand(o => ChooseFile(), c => CanChooseFile());
+            ImportRSAKeysCommand = new RelayCommand(o => ImportRSAKeys(), c => CanImportRSAKeys());
+            ExportRSAKeysCommand = new RelayCommand(o => ExportRSAKeys(), c => CanExportRSAKeys());
+            RSAEncryptFileCommand = new AsyncCommand(o => RSAEncryptFile(), c => CanRSAEncryptFile());
+            RSADencryptFileCommand = new AsyncCommand(o => RSADecryptFile(), c => CanRSADecryptFile());
+            RC5EncryptFileCommand = new AsyncCommand(o => RC5EncryptFile(), c => CanRC5EncryptFile());
+            RC5DencryptFileCommand = new AsyncCommand(o => RC5DecryptFile(), c => CanRC5DecryptFile());
 
             _rc5 = new RC5.RC5(RoundCount.Rounds12, WordBitsLength.Bit64);
         }
 
-        private bool CanSaveEncryptedFile()
-        {
-            return (!IsInProgress
-                || !string.IsNullOrEmpty(FilenameInput))
-                && File.Exists(FilenameInput + ".enc");
-        }
-
-        private void SaveEncryptedFile()
-        {
-            var saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Title = "Save File...";
-            saveFileDialog.FileName = Path.GetFileName(FilenameInput + ".enc");
-
-            if (saveFileDialog.ShowDialog() == true && (FilenameInput + ".enc") != saveFileDialog.FileName)
-            {
-                File.Move(FilenameInput + ".enc", saveFileDialog.FileName);
-                CleanTemporaryFiles();
-
-                Status = "Encrypted file saved:";
-            }
-        }
-
-        private bool CanDecryptFile()
-        {
-            return !IsInProgress
-                || !string.IsNullOrEmpty(FilenameInput);
-        }
-
-        private async Task DecryptFile()
-        {
-            await Task.Run(() =>
-            {
-                IsInProgress = true;
-                Status = "Decrypting...:";
-
-                var hashedKey = Encoding.UTF8
-                    .GetBytes(PasswordInput)
-                    .GetMD5HashedKeyForRC5(KeyBytesLength.Bytes8);
-
-                var decodedFileContent = _rc5.DecipherCBCPAD(
-                    File.ReadAllBytes(FilenameInput),
-                    hashedKey);
-
-                File.WriteAllBytes(FilenameInput.Replace(".enc", ""), decodedFileContent);
-
-                Status = "File was decrypted!";
-                IsInProgress = false;
-            });
-        }
-
-        private bool CanEncryptFile()
-        {
-            return !(IsInProgress
-                || string.IsNullOrEmpty(FilenameInput)
-                || string.IsNullOrEmpty(PasswordInput)
-                || File.Exists(FilenameInput + ".enc"));
-        }
-
-        private async Task EncryptFile()
-        {
-            await Task.Run(() =>
-            {
-                IsInProgress = true;
-                Status = "Encrypting...:";
-
-                var hashedKey = Encoding.UTF8
-                    .GetBytes(PasswordInput)
-                    .GetMD5HashedKeyForRC5(KeyBytesLength.Bytes8);
-
-                var encodedFileContent = _rc5.EncipherCBCPAD(
-                    File.ReadAllBytes(FilenameInput),
-                    hashedKey);
-
-                File.WriteAllBytes(FilenameInput + ".enc", encodedFileContent);
-
-                Status = "File was encrypted!";
-                IsInProgress = false;
-            });
-        }
-
-        private bool CanChooseFileToEncrypt()
+        private bool CanChooseFile()
         {
             return !IsInProgress;
         }
 
-        private void ChooseFileToEncrypt()
+        private void ChooseFile()
         {
             var openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "Choose File...";
@@ -206,6 +149,104 @@ namespace RSAApplication.ViewModel
                 Status = "Chosen file:";
                 Output = FilenameInput;
             }
+        }
+
+        private bool CanImportRSAKeys()
+        {
+            return true;
+        }
+
+        private void ImportRSAKeys()
+        {
+            throw new NotImplementedException();
+        }
+
+        private bool CanExportRSAKeys()
+        {
+            return true;
+        }
+
+        private void ExportRSAKeys()
+        {
+            throw new NotImplementedException();
+        }
+
+        private bool CanRSAEncryptFile()
+        {
+            return true;
+        }
+
+        private Task RSAEncryptFile()
+        {
+            throw new NotImplementedException();
+        }
+
+        private bool CanRSADecryptFile()
+        {
+            return true;
+        }
+
+        private Task RSADecryptFile()
+        {
+            throw new NotImplementedException();
+        }
+
+        private bool CanRC5DecryptFile()
+        {
+            return !IsInProgress
+                || !string.IsNullOrEmpty(FilenameInput);
+        }
+
+        private async Task RC5DecryptFile()
+        {
+            await Task.Run(() =>
+            {
+                IsInProgress = true;
+                Status = "Decrypting...:";
+
+                var hashedKey = Encoding.UTF8
+                    .GetBytes(RC5PasswordInput)
+                    .GetMD5HashedKeyForRC5(KeyBytesLength.Bytes8);
+
+                var decodedFileContent = _rc5.DecipherCBCPAD(
+                    File.ReadAllBytes(FilenameInput),
+                    hashedKey);
+
+                File.WriteAllBytes(FilenameInput.Replace(".enc", ""), decodedFileContent);
+
+                Status = "File was decrypted!";
+                IsInProgress = false;
+            });
+        }
+
+        private bool CanRC5EncryptFile()
+        {
+            return !(IsInProgress
+                || string.IsNullOrEmpty(FilenameInput)
+                || string.IsNullOrEmpty(RC5PasswordInput)
+                || File.Exists(FilenameInput + ".enc"));
+        }
+
+        private async Task RC5EncryptFile()
+        {
+            await Task.Run(() =>
+            {
+                IsInProgress = true;
+                Status = "Encrypting...:";
+
+                var hashedKey = Encoding.UTF8
+                    .GetBytes(RC5PasswordInput)
+                    .GetMD5HashedKeyForRC5(KeyBytesLength.Bytes8);
+
+                var encodedFileContent = _rc5.EncipherCBCPAD(
+                    File.ReadAllBytes(FilenameInput),
+                    hashedKey);
+
+                File.WriteAllBytes(FilenameInput + ".enc", encodedFileContent);
+
+                Status = "File was encrypted!";
+                IsInProgress = false;
+            });
         }
 
         private void CleanTemporaryFiles()
