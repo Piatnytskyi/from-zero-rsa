@@ -17,7 +17,9 @@ namespace RSA
 
         public async Task Encrypt(Stream unencrypted, Stream encrypted, RSAParameters rsaKeyInfo)
         {
-            using (var rsaCryptoServiceProvider = new RSACryptoServiceProvider())
+            CspParameters cspParameters = new CspParameters();
+            cspParameters.Flags = CspProviderFlags.UseMachineKeyStore;
+            using (var rsaCryptoServiceProvider = new RSACryptoServiceProvider(cspParameters))
             {
                 rsaCryptoServiceProvider.ImportParameters(rsaKeyInfo);
 
@@ -38,7 +40,9 @@ namespace RSA
 
         public async Task Decipher(Stream encrypted, Stream unencrypted, RSAParameters rsaKeyInfo)
         {
-            using (var rsaCryptoServiceProvider = new RSACryptoServiceProvider())
+            CspParameters cspParameters = new CspParameters();
+            cspParameters.Flags = CspProviderFlags.UseMachineKeyStore;
+            using (var rsaCryptoServiceProvider = new RSACryptoServiceProvider(cspParameters))
             {
                 rsaCryptoServiceProvider.ImportParameters(rsaKeyInfo);
 
