@@ -4,6 +4,7 @@ using RC5.Extensions;
 using RSA;
 using RSAApplication.Commands;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -238,15 +239,21 @@ namespace RSAApplication.ViewModel
 
             try
             {
+                var stopwatch = new Stopwatch();
+
                 using (var fileToEncrypt = File.OpenRead(FilenameInput))
                 using (var decryptedFile = File.OpenWrite(temporaryFileName))
+                {
+                    stopwatch.Start();
                     await rsaWrapper.Encrypt(
                         fileToEncrypt,
                         decryptedFile,
                         _rsaCryptoServiceProvider.ExportParameters(
                             _rsaCurrentService == RSAService.Authentication));
+                    stopwatch.Stop();
+                }
 
-                Status = "File was encrypted!";
+                Status = "File was encrypted! " + stopwatch.ElapsedMilliseconds + " ms.";
                 IsInProgress = false;
             }
             catch (Exception ex)
@@ -290,15 +297,21 @@ namespace RSAApplication.ViewModel
 
             try
             {
+                var stopwatch = new Stopwatch();
+
                 using (var fileToDecrypt = File.OpenRead(FilenameInput))
                 using (var decryptedFile = File.OpenWrite(temporaryFileName))
+                {
+                    stopwatch.Start();
                     await rsaWrapper.Decipher(
                         fileToDecrypt,
                         decryptedFile,
                         _rsaCryptoServiceProvider.ExportParameters(
                             _rsaCurrentService == RSAService.Confidentiality));
+                    stopwatch.Stop();
+                }
 
-                Status = "File was decrypted!";
+                Status = "File was decrypted! " + stopwatch.ElapsedMilliseconds + " ms.";
                 IsInProgress = false;
             }
             catch (Exception ex)
@@ -338,10 +351,13 @@ namespace RSAApplication.ViewModel
                 var hashedKey = Encoding.UTF8
                     .GetBytes(RC5PasswordInput)
                     .GetMD5HashedKeyForRC5(KeyBytesLength.Bytes8);
-
+                
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
                 var decodedFileContent = _rc5.DecipherCBCPAD(
                     File.ReadAllBytes(FilenameInput),
                     hashedKey);
+                stopwatch.Stop();
 
                 var selectedFileInfo = new FileInfo(saveFileDialog.FileName);
                 var temporaryFileName = FilenameInput == saveFileDialog.FileName
@@ -352,7 +368,7 @@ namespace RSAApplication.ViewModel
                 if (temporaryFileName != saveFileDialog.FileName)
                     File.Move(temporaryFileName, saveFileDialog.FileName, true);
 
-                Status = "File was decrypted!";
+                Status = "File was decrypted! " + stopwatch.ElapsedMilliseconds + " ms.";
                 IsInProgress = false;
             });
         }
@@ -383,9 +399,12 @@ namespace RSAApplication.ViewModel
                     .GetBytes(RC5PasswordInput)
                     .GetMD5HashedKeyForRC5(KeyBytesLength.Bytes8);
 
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
                 var encodedFileContent = _rc5.EncipherCBCPAD(
                     File.ReadAllBytes(FilenameInput),
                     hashedKey);
+                stopwatch.Stop();
 
                 var temporaryFileName = FilenameInput == saveFileDialog.FileName
                     ? saveFileDialog.FileName + ".enc"
@@ -394,7 +413,7 @@ namespace RSAApplication.ViewModel
                 if (temporaryFileName != saveFileDialog.FileName)
                     File.Move(temporaryFileName, saveFileDialog.FileName, true);
 
-                Status = "File was encrypted!";
+                Status = "File was encrypted! " + stopwatch.ElapsedMilliseconds + " ms.";
                 IsInProgress = false;
             });
         }
